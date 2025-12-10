@@ -1,0 +1,51 @@
+vector_db:
+  manual:
+    persist_directory: "data/system/vector_db/manual"
+  pdf:
+    persist_directory: "data/system/vector_db/pdf"
+    chunk_size: 1000
+    chunk_overlap: 200
+
+image_db:
+  directory: "data/system/image_memory.yaml"
+
+embedding:
+  model: "text-embedding-3-large"
+
+retriever:
+  manual:
+    top_k: 3
+  pdf:
+    top_k: 2
+
+llm:
+  supervisor:
+    model: "openrouter:google/gemini-2.5-pro"
+    temperature: 0.1
+  report_writer:
+    model: "openrouter:google/gemini-2.5-pro"
+    temperature: 0.1
+  evidence_extractor:
+    model: "openrouter:qwen/qwen3-235b-a22b-2507"
+    temperature: 0.1
+  manual_analyzer:
+    model: "openrouter:qwen/qwen3-235b-a22b-2507"
+    temperature: 0.1
+  model_inspector:
+    model: "openrouter:qwen/qwen3-coder"
+    temperature: 0.1
+  image_analyzer:
+    model: "openrouter:google/gemini-2.5-pro"
+    temperature: 0.1
+    image_resolution: "high"
+
+paths:
+  models_dir: "data/user/model"
+  images_dir: "data/user/images"
+  reports_dir: "outputs/reports"
+  user_pdfs: "data/user/pdfs"
+  manual: "data/system/manuals"
+  logs_dir: "outputs/logs"
+
+model_file:
+  suffix: "ecl2"

@@ -57,13 +57,13 @@ Place your input files in the appropriate directories:
 
 The vector database is built automatically on first run. Modeling manuals are split by section headers and regulatory PDFs are chunked into 1,000-character segments, both embedded using OpenAI text-embedding-3-large.
 
-### Step 4: Build the initial image memory (run once)
+### Step 4: Build the initial image memory (first run only)
 
-Before running section-by-section debugging, you must build the image memory by running the system once with `perform_initial_image_analysis` enabled (which is the default). This analyzes all architectural drawings and stores the results in `data/system/image_memory.yaml`.
+The first run performs initial image analysis alongside the first section review. Image analysis results are saved to `data/system/image_memory.yaml` and reused in all subsequent runs.
 
     python app.py
 
-After this initial run, comment out the `perform_initial_image_analysis` block in app.py to prevent duplicate entries on subsequent runs:
+After the first run, comment out the `perform_initial_image_analysis` block in app.py to prevent duplicate memory entries:
 
     # print(" 초기 이미지 분석 ".center(80, '='))
     # perform_initial_image_analysis(config)

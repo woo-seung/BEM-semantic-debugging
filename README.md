@@ -1,40 +1,123 @@
-# BEM-semantic-debugging
+# BEM Semantic Debugging
 
 A retrieval-augmented generation (RAG)-based multi-agent system for semantic error debugging in building energy models.
 
 ## Overview
 
-This repository contains the source code and debugging result reports for the multi-agent system proposed in our paper. The system automatically detects semantic errors in building energy model (BEM) files and suggests corrective measures by leveraging modeling manuals as a knowledge base and multimodal processing for input validation.
+This system automatically detects semantic errors in building energy model (BEM) files and suggests corrective measures by leveraging modeling manuals as a knowledge base and multimodal processing for building drawing analysis.
 
-## Project Structure
+The system employs a multi-agent architecture where specialized agents collaborate under a Supervisor:
+- **Supervisor**: Orchestrates the workflow and assigns tasks to subordinate agents
+- **Manual Analyzer**: Retrieves modeling guidelines from the knowledge base
+- **Model Inspector**: Extracts and analyzes input values from BEM files using Python
+- **Evidence Extractor**: Extracts ground truth from building drawings and regulatory documents
+- **Report Writer**: Generates structured debugging reports with corrections and evidence
 
-```
-BEM-semantic-debugging/
-├── app.py                      # Main entry point
-├── config.yaml                 # Configuration file
-├── .env                        # Environment variables
-├── main_graph/
-│   ├── graph_builder.py        # Supervisor graph
-│   └── graph_states.py         # State definitions (AgentState, StepResult)
-├── sub_agents/
-│   ├── evidence_extractor/
-│   ├── manual_analyzer/
-│   ├── model_inspector/
-│   └── report_writer/
-├── utils/
-│   ├── utils.py
-│   ├── prompt.py
-│   └── model_ontology.py
-├── data/
-│   ├── system/
-│   │   ├── manuals/ 
-│   │   └── vector_db/          # FAISS vector index
-│   └── user/
-│       ├── model/              # User provided building energy model file
-│       ├── images/             # Architectural drawings/images
-│       └── pdfs/               # Regulatory PDF documents
-└── outputs/
-    └── reports/                # Generated debugging reports
-```
+LLM API calls are routed through [OpenRouter](https://openrouter.ai/), which provides unified access to various commercial LLM providers. Execution traces can be monitored via [LangSmith](https://smith.langchain.com/) for debugging and performance analysis.
 
-**Note**: Building names in the reports are masked for confidentiality.
+## Installation
+
+1. Clone the repository:
+
+       git clone https://github.com/woo-seung/BEM-semantic-debugging.git
+       cd BEM-semantic-debugging
+
+2. Install dependencies:
+
+       pip install -r requirements.txt
+
+3. Set up environment variables:
+
+       cp .env.example .env
+
+   Edit .env with your API keys:
+
+   - `OPENROUTER_API_KEY`: Required. API key from [OpenRouter](https://openrouter.ai/) for LLM access.
+   - `OPENROUTER_BASE_URL`: Required. Set to `https://openrouter.ai/api/v1`.
+   - `LANGCHAIN_API_KEY`: Optional. API key from [LangSmith](https://smith.langchain.com/) for execution tracing and logging.
+
+## Getting Started
+
+### Step 1: Configure the system
+
+Review config.yaml and adjust settings if needed. Key settings include LLM model selection for each agent, retrieval top-k values, and the model file extension.
+
+### Step 2: Prepare your data
+
+Place your input files in the appropriate directories:
+
+| Directory | Contents | Format |
+|-----------|----------|--------|
+| data/user/model/ | BEM simulation model file | XML-based (e.g., .ecl2) |
+| data/user/images/ | Architectural drawings | JPG or PNG (high resolution) |
+| data/user/pdfs/ | Building energy codes | PDF |
+| data/system/manuals/ | Modeling guidelines | Markdown (.md) |
+
+### Step 3: Build the knowledge base
+
+The vector database is built automatically on first run. Modeling manuals are split by section headers and regulatory PDFs are chunked into 1,000-character segments, both embedded using OpenAI text-embedding-3-large.
+
+### Step 4: Write the debugging request
+
+The system requires an explicit user prompt specifying which section to review. Open app.py and define your debugging request in the `section_split` list, specifying the target section. For example:
+
+    section_split = [
+        "A. General, Architectural basic overview",
+    ]
+
+The prompt should clearly state the target building, modeling scope, and which section to review. See the `USER_PROMPT_TEMPLATE` in app.py for the full prompt format.
+
+### Step 5: Run the system
+
+    python app.py
+
+Each run reviews the section specified in your debugging request. To review additional sections, update the section in `section_split` and run again. Image memory from previous runs is preserved across sections.
+
+### Step 6: View results
+
+- **Debugging reports**: Saved to `outputs/reports/report_{timestamp}.md` with detected errors, suggested corrections, and source references.
+- **Execution logs**: Saved to `outputs/logs/` for detailed run information.
+- **LangSmith traces**: If configured, full execution traces are available in your LangSmith dashboard for step-by-step agent interaction analysis.
+
+## Input Data Format
+
+### Model Files
+BEM model files must be XML-based. The system parses them using the schema definition in utils/model_ontology.py, which maps XML keys to human-readable field names.
+
+### Modeling Manuals
+Write in Markdown with H1/H2 headers. Each section should describe input field names, modeling rules, default values, and common mistakes.
+
+### Building Drawings
+Provide as high-resolution JPG/PNG. The system uses a multimodal LLM to extract floor plans, equipment schedules, and specifications.
+
+### Regulatory Documents
+Provide as PDF files. Text is extracted and stored in a vector database for retrieval.
+
+## Adapting to Other BEM Tools
+
+To use with a different simulation tool:
+
+1. **Model schema**: Modify utils/model_ontology.py to define your tool's data structure
+2. **Modeling guidelines**: Create a Markdown manual in data/system/manuals/
+3. **Configuration**: Update config.yaml (file extension, paths, LLM settings)
+4. **User data**: Place model files, drawings, and regulations in data/user/
+
+## Configuration Reference
+
+| Key | Description | Default |
+|-----|-------------|---------|
+| llm.supervisor.model | LLM for Supervisor | google/gemini-2.5-pro |
+| llm.evidence_extractor.model | LLM for Evidence Extractor | qwen/qwen3-235b-a22b-2507 |
+| llm.manual_analyzer.model | LLM for Manual Analyzer | qwen/qwen3-235b-a22b-2507 |
+| llm.model_inspector.model | LLM for Model Inspector | qwen/qwen3-coder |
+| llm.report_writer.model | LLM for Report Writer | google/gemini-2.5-pro |
+| llm.image_analyzer.model | LLM for image analysis | google/gemini-2.5-pro |
+| llm.*.temperature | LLM temperature | 0.1 |
+| retriever.manual.top_k | Manual retrieval results | 3 |
+| retriever.pdf.top_k | PDF retrieval results | 2 |
+| embedding.model | Embedding model | text-embedding-3-large |
+| model_file.suffix | Model file extension | ecl2 |
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

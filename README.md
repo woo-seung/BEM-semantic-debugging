@@ -94,7 +94,7 @@ Image memory from previous runs is preserved across sections.
 ## Input Data Format
 
 ### Model Files
-BEM model files must be XML-based. The system parses them using the schema definition in utils/model_ontology.py, which maps XML keys to human-readable field names.
+BEM model files are not limited to a specific format. The default implementation uses an XML-based format, parsed via the schema definition in utils/model_ontology.py, which maps XML keys to human-readable field names. If your simulation tool uses a different file format, you will need to customize the parsing logic in utils/model_ontology.py and write the modeling manual accordingly to match that tool's structure.
 
 ### Modeling Manuals
 Write in Markdown with H1/H2 headers. Each section should describe input field names, modeling rules, default values, and common mistakes.

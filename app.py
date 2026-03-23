@@ -57,9 +57,9 @@ if __name__ == "__main__":
         print(f"OpenRouter Credits: {credits['total_credits'] - credits['total_usage']}")
         print("=" * 80)
 
-        # print(" 초기 이미지 분석 ".center(80, '='))
-        # perform_initial_image_analysis(config)
-        # print("=" * 80)
+        print(" 초기 이미지 분석 ".center(80, '='))
+        perform_initial_image_analysis(config)
+        print("=" * 80)
 
         graph = build_main_graph()
 

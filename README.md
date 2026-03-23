@@ -57,23 +57,35 @@ Place your input files in the appropriate directories:
 
 The vector database is built automatically on first run. Modeling manuals are split by section headers and regulatory PDFs are chunked into 1,000-character segments, both embedded using OpenAI text-embedding-3-large.
 
-### Step 4: Write the debugging request
+### Step 4: Build the initial image memory (run once)
 
-The system requires an explicit user prompt specifying which section to review. Open app.py and define your debugging request in the `section_split` list, specifying the target section. For example:
-
-    section_split = [
-        "A. General, Architectural basic overview",
-    ]
-
-The prompt should clearly state the target building, modeling scope, and which section to review. See the `USER_PROMPT_TEMPLATE` in app.py for the full prompt format.
-
-### Step 5: Run the system
+Before running section-by-section debugging, you must build the image memory by running the system once with `perform_initial_image_analysis` enabled (which is the default). This analyzes all architectural drawings and stores the results in `data/system/image_memory.yaml`.
 
     python app.py
 
-Each run reviews the section specified in your debugging request. To review additional sections, update the section in `section_split` and run again. Image memory from previous runs is preserved across sections.
+After this initial run, comment out the `perform_initial_image_analysis` block in app.py to prevent duplicate entries on subsequent runs:
 
-### Step 6: View results
+    # print(" 초기 이미지 분석 ".center(80, '='))
+    # perform_initial_image_analysis(config)
+    # print("=" * 80)
+
+### Step 5: Write the debugging request
+
+The system requires an explicit user prompt specifying which section to review. Open app.py and define the sections in the `section_split` list and activate the target section by uncommenting the corresponding `user_request` line. For example, to review the first section:
+
+    user_request = USER_PROMPT_TEMPLATE.format(..., review_part=section_split[0])
+    # user_request = USER_PROMPT_TEMPLATE.format(..., review_part=section_split[1])
+    # ...
+
+Each run processes exactly one section. To review the next section, comment out the current `user_request` line and uncomment the next one, then run again.
+
+### Step 6: Run the system
+
+    python app.py
+
+Image memory from previous runs is preserved across sections.
+
+### Step 7: View results
 
 - **Debugging reports**: Saved to `outputs/reports/report_{timestamp}.md` with detected errors, suggested corrections, and source references.
 - **Execution logs**: Saved to `outputs/logs/` for detailed run information.
